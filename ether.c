@@ -41,7 +41,7 @@ ether_addr_pton(const char *p, uint8_t *n)
     return  0;
 }
 
-static const char *
+ const char *
 ether_type_ntoa(uint16_t type)
 {
     switch (ntoh16(type)) {
@@ -65,7 +65,7 @@ ether_addr_ntop(const uint8_t *n, char *p, size_t size)
     return p;
 }
 
-static void
+ void
 ether_dump(const uint8_t *frame, size_t flen)
 {
     struct ether_hdr *hdr;

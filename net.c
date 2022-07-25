@@ -40,10 +40,10 @@ struct net_event {
 };
 
 /* NOTE: if you want to add/delete the entries after net_run(), you need to protect these lists with a mutex. */
-static struct net_device *devices;
-static struct net_protocol *protocols;
-static struct net_timer *timers;
-static struct net_event *events;
+ struct net_device *devices;
+ struct net_protocol *protocols;
+ struct net_timer *timers;
+ struct net_event *events;
 
 struct net_device *
 net_device_alloc(void (*setup)(struct net_device *dev))
@@ -65,7 +65,7 @@ net_device_alloc(void (*setup)(struct net_device *dev))
 int
 net_device_register(struct net_device *dev)
 {
-    static unsigned int index = 0;
+     unsigned int index = 0;
 
     dev->index = index++;
     snprintf(dev->name, sizeof(dev->name), "net%d", dev->index);
@@ -75,7 +75,7 @@ net_device_register(struct net_device *dev)
     return 0;
 }
 
-static int
+ int
 net_device_open(struct net_device *dev)
 {
     if (NET_DEVICE_IS_UP(dev)) {
@@ -93,7 +93,7 @@ net_device_open(struct net_device *dev)
     return 0;
 }
 
-static int
+ int
 net_device_close(struct net_device *dev)
 {
     if (!NET_DEVICE_IS_UP(dev)) {

@@ -50,10 +50,10 @@ struct arp_cache {
     struct timeval timestamp;
 };
 
-static mutex_t mutex = MUTEX_INITIALIZER;
-static struct arp_cache caches[ARP_CACHE_SIZE];
+ mutex_t mutex = MUTEX_INITIALIZER;
+ struct arp_cache caches[ARP_CACHE_SIZE];
 
-static char *
+ char *
 arp_opcode_ntoa(uint16_t opcode)
 {
     switch (ntoh16(opcode)) {
@@ -65,7 +65,7 @@ arp_opcode_ntoa(uint16_t opcode)
     return "Unknown";
 }
 
-static void
+ void
 arp_dump(const uint8_t *data, size_t len)
 {
     struct arp_ether *message;
@@ -97,7 +97,7 @@ arp_dump(const uint8_t *data, size_t len)
  * NOTE: ARP Cache functions must be called after mutex locked
  */
 
-static struct arp_cache *
+ struct arp_cache *
 arp_cache_alloc(void)
 {
     struct arp_cache *entry, *oldest = NULL;
@@ -113,7 +113,7 @@ arp_cache_alloc(void)
     return oldest;
 }
 
-static struct arp_cache *
+ struct arp_cache *
 arp_cache_select(ip_addr_t pa)
 {
     struct arp_cache *entry;
@@ -126,7 +126,7 @@ arp_cache_select(ip_addr_t pa)
     return NULL;
 }
 
-static struct arp_cache *
+ struct arp_cache *
 arp_cache_update(ip_addr_t pa, const uint8_t *ha)
 {
     struct arp_cache *cache;
@@ -145,7 +145,7 @@ arp_cache_update(ip_addr_t pa, const uint8_t *ha)
     return cache;
 }
 
-static struct arp_cache *
+ struct arp_cache *
 arp_cache_insert(ip_addr_t pa, const uint8_t *ha)
 {
     struct arp_cache *cache;
@@ -165,7 +165,7 @@ arp_cache_insert(ip_addr_t pa, const uint8_t *ha)
     return cache;
 }
 
-static void
+ void
 arp_cache_delete(struct arp_cache *cache)
 {
     char addr1[IP_ADDR_STR_LEN];
@@ -178,7 +178,7 @@ arp_cache_delete(struct arp_cache *cache)
     timerclear(&cache->timestamp);
 }
 
-static int
+ int
 arp_request(struct net_iface *iface, ip_addr_t tpa)
 {
     struct arp_ether request;
@@ -197,7 +197,7 @@ arp_request(struct net_iface *iface, ip_addr_t tpa)
     return net_device_output(iface->dev, ETHER_TYPE_ARP, (uint8_t *)&request, sizeof(request), iface->dev->broadcast);
 }
 
-static int
+ int
 arp_reply(struct net_iface *iface, const uint8_t *tha, ip_addr_t tpa, const uint8_t *dst)
 {
     struct arp_ether reply;
@@ -216,7 +216,7 @@ arp_reply(struct net_iface *iface, const uint8_t *tha, ip_addr_t tpa, const uint
     return net_device_output(iface->dev, ETHER_TYPE_ARP, (uint8_t *)&reply, sizeof(reply), dst);
 }
 
-static void
+ void
 arp_input(const uint8_t *data, size_t len, struct net_device *dev)
 {
     struct arp_ether *msg;
@@ -304,7 +304,7 @@ arp_resolve(struct net_iface *iface, ip_addr_t pa, uint8_t *ha)
     return ARP_RESOLVE_FOUND;
 }
 
-static void
+ void
 arp_timer(void)
 {
     struct arp_cache *entry;

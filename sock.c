@@ -10,7 +10,7 @@
 
 #include "sock.h"
 
-static struct sock socks[128];
+ struct sock socks[128];
 
 int
 sockaddr_pton(const char *p, struct sockaddr *n, size_t size)
@@ -46,7 +46,7 @@ sockaddr_ntop(const struct sockaddr *n, char *p, size_t size)
     return NULL;
 }
 
-static struct sock *
+ struct sock *
 sock_alloc(void)
 {
     struct sock *entry;
@@ -60,14 +60,14 @@ sock_alloc(void)
     return NULL;
 }
 
-static int
+ int
 sock_free(struct sock *s)
 {
     memset(s, 0, sizeof(*s));
     return 0;
 }
 
-static struct sock *
+ struct sock *
 sock_get(int id)
 {
     if (id < 0 || id >= (int)countof(socks)) {

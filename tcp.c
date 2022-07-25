@@ -47,83 +47,16 @@
 #define TCP_SOURCE_PORT_MIN 49152
 #define TCP_SOURCE_PORT_MAX 65535
 
-struct pseudo_hdr {
-    uint32_t src;
-    uint32_t dst;
-    uint8_t zero;
-    uint8_t protocol;
-    uint16_t len;
-};
+ static mutex_t mutex = MUTEX_INITIALIZER;
+ struct tcp_pcb pcbs[TCP_PCB_SIZE];
 
-struct tcp_hdr {
-    uint16_t src;
-    uint16_t dst;
-    uint32_t seq;
-    uint32_t ack;
-    uint8_t off;
-    uint8_t flg;
-    uint16_t wnd;
-    uint16_t sum;
-    uint16_t up;
-};
-
-struct tcp_segment_info {
-    uint32_t seq;
-    uint32_t ack;
-    uint16_t len;
-    uint16_t wnd;
-    uint16_t up;
-};
-
-struct tcp_pcb {
-    int state;
-    int mode; /* user command mode */
-    struct ip_endpoint local;
-    struct ip_endpoint foreign;
-    struct {
-        uint32_t nxt;
-        uint32_t una;
-        uint16_t wnd;
-        uint16_t up;
-        uint32_t wl1;
-        uint32_t wl2;
-    } snd;
-    uint32_t iss;
-    struct {
-        uint32_t nxt;
-        uint16_t wnd;
-        uint16_t up;
-    } rcv;
-    uint32_t irs;
-    uint16_t mtu;
-    uint16_t mss;
-    uint8_t buf[65535]; /* receive buffer */
-    struct sched_ctx ctx;
-    struct queue_head queue; /* retransmit queue */
-    struct timeval tw_timer;
-    struct tcp_pcb *parent;
-    struct queue_head backlog;
-};
-
-struct tcp_queue_entry {
-    struct timeval first;
-    struct timeval last;
-    unsigned int rto; /* micro seconds */
-    uint32_t seq;
-    uint8_t flg;
-    size_t len;
-};
-
-static mutex_t mutex = MUTEX_INITIALIZER;
-static struct tcp_pcb pcbs[TCP_PCB_SIZE];
-
-static ssize_t
+ ssize_t
 tcp_output_segment(uint32_t seq, uint32_t ack, uint8_t flg, uint16_t wnd, uint8_t *data, size_t len, struct ip_endpoint *local, struct ip_endpoint *foreign);
 
-static char *
+ char *
 tcp_flg_ntoa(uint8_t flg)
 {
-    static char str[9];
+     char str[9];
 
     snprintf(str, sizeof(str), "--%c%c%c%c%c%c",
         TCP_FLG_ISSET(flg, TCP_FLG_URG) ? 'U' : '-',
@@ -135,7 +68,7 @@ tcp_flg_ntoa(uint8_t flg)
     return str;
 }
 
-static void
+ void
 tcp_dump(const uint8_t *data, size_t len)
 {
     struct tcp_hdr *hdr;
@@ -163,8 +96,7 @@ tcp_dump(const uint8_t *data, size_t len)
  * NOTE: TCP PCB functions must be called after mutex locked
  */
 
-static struct tcp_pcb *
-tcp_pcb_alloc(void)
+ struct tcp_pcb * tcp_pcb_alloc(void)
 {
     struct tcp_pcb *pcb;
 
@@ -178,7 +110,7 @@ tcp_pcb_alloc(void)
     return NULL;
 }
 
-static void
+ void
 tcp_pcb_release(struct tcp_pcb *pcb)
 {
     struct queue_entry *entry;
@@ -201,7 +133,7 @@ tcp_pcb_release(struct tcp_pcb *pcb)
     memset(pcb, 0, sizeof(*pcb));
 }
 
-static struct tcp_pcb *
+ struct tcp_pcb *
 tcp_pcb_select(struct ip_endpoint *local, struct ip_endpoint *foreign)
 {
     struct tcp_pcb *pcb, *listen_pcb = NULL;
@@ -225,8 +157,7 @@ tcp_pcb_select(struct ip_endpoint *local, struct ip_endpoint *foreign)
     return listen_pcb;
 }
 
-static struct tcp_pcb *
-tcp_pcb_get(int id)
+ struct tcp_pcb *tcp_pcb_get(int id)
 {
     struct tcp_pcb *pcb;
 
@@ -241,8 +172,7 @@ tcp_pcb_get(int id)
     return pcb;
 }
 
-static int
-tcp_pcb_id(struct tcp_pcb *pcb)
+ int tcp_pcb_id(struct tcp_pcb *pcb)
 {
     return indexof(pcbs, pcb);
 }
@@ -253,8 +183,7 @@ tcp_pcb_id(struct tcp_pcb *pcb)
  * NOTE: TCP Retransmit functions must be called after mutex locked
  */
 
-static int
-tcp_retransmit_queue_add(struct tcp_pcb *pcb, uint32_t seq, uint8_t flg, uint8_t *data, size_t len)
+ int tcp_retransmit_queue_add(struct tcp_pcb *pcb, uint32_t seq, uint8_t flg, uint8_t *data, size_t len)
 {
     struct tcp_queue_entry *entry;
 
@@ -278,7 +207,7 @@ tcp_retransmit_queue_add(struct tcp_pcb *pcb, uint32_t seq, uint8_t flg, uint8_t
     return 0;
 }
 
-static void
+ void
 tcp_retransmit_queue_cleanup(struct tcp_pcb *pcb)
 {
     struct tcp_queue_entry *entry;
@@ -294,7 +223,7 @@ tcp_retransmit_queue_cleanup(struct tcp_pcb *pcb)
     return;
 }
 
-static void
+ void
 tcp_retransmit_queue_emit(void *arg, void *data)
 {
     struct tcp_pcb *pcb;
@@ -319,7 +248,7 @@ tcp_retransmit_queue_emit(void *arg, void *data)
     }
 }
 
-static void
+ void
 tcp_set_timewait_timer(struct tcp_pcb *pcb)
 {
     gettimeofday(&pcb->tw_timer, NULL);
@@ -327,7 +256,7 @@ tcp_set_timewait_timer(struct tcp_pcb *pcb)
     debugf("start time_wait timer: %d seconds", TCP_TIMEWAIT_SEC);
 }
 
-static ssize_t
+ ssize_t
 tcp_output_segment(uint32_t seq, uint32_t ack, uint8_t flg, uint16_t wnd, uint8_t *data, size_t len, struct ip_endpoint *local, struct ip_endpoint *foreign)
 {
     uint8_t buf[IP_PAYLOAD_SIZE_MAX] = {};
@@ -366,7 +295,7 @@ tcp_output_segment(uint32_t seq, uint32_t ack, uint8_t flg, uint16_t wnd, uint8_
     return len;
 }
 
-static ssize_t
+ ssize_t
 tcp_output(struct tcp_pcb *pcb, uint8_t flg, uint8_t *data, size_t len)
 {
     uint32_t seq;
@@ -382,7 +311,7 @@ tcp_output(struct tcp_pcb *pcb, uint8_t flg, uint8_t *data, size_t len)
 }
 
 /* rfc793 - section 3.9 [Event Processing > SEGMENT ARRIVES] */
-static void
+ void
 tcp_segment_arrives(struct tcp_segment_info *seg, uint8_t flags, uint8_t *data, size_t len, struct ip_endpoint *local, struct ip_endpoint *foreign)
 {
     struct tcp_pcb *pcb, *new_pcb;
@@ -768,7 +697,7 @@ tcp_segment_arrives(struct tcp_segment_info *seg, uint8_t flags, uint8_t *data, 
     return;
 }
 
-static void
+ void
 tcp_input(const uint8_t *data, size_t len, ip_addr_t src, ip_addr_t dst, struct ip_iface *iface)
 {
     struct tcp_hdr *hdr;
@@ -826,7 +755,7 @@ tcp_input(const uint8_t *data, size_t len, ip_addr_t src, ip_addr_t dst, struct 
     return;
 }
 
-static void
+ void
 tcp_timer(void)
 {
     struct tcp_pcb *pcb;
@@ -853,7 +782,7 @@ tcp_timer(void)
     mutex_unlock(&mutex);
 }
 
-static void
+ void
 event_handler(void *arg)
 {
     struct tcp_pcb *pcb;

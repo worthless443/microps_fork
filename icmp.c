@@ -23,7 +23,7 @@ struct icmp_echo {
     uint16_t seq;
 };
 
-static char *
+ char *
 icmp_type_ntoa(uint8_t type) {
     switch (type) {
     case ICMP_TYPE_ECHOREPLY:
@@ -52,7 +52,7 @@ icmp_type_ntoa(uint8_t type) {
     return "Unknown";
 }
 
-static void
+ void
 icmp_dump(const uint8_t *data, size_t len)
 {
     struct icmp_hdr *hdr;
@@ -80,7 +80,7 @@ icmp_dump(const uint8_t *data, size_t len)
     funlockfile(stderr);
 }
 
-static void
+ void
 icmp_input(const uint8_t *data, size_t len, ip_addr_t src, ip_addr_t dst, struct ip_iface *iface)
 {
     struct icmp_hdr *hdr;
